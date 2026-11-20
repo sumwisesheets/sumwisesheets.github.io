@@ -89,6 +89,9 @@ dialog{border:0;border-radius:18px;padding:0;background:var(--card);color:var(--
 dialog::backdrop{background:rgba(0,0,0,.35)}
 dialog .dh{padding:16px 18px 0;font-weight:800;font-size:17px}dialog .db{padding:14px 18px}dialog .df{padding:0 18px 18px;display:flex;gap:10px;justify-content:flex-end}
 svg text{fill:var(--muted);font-size:11px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal div{height:34px;border-radius:9px;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--chip);color:var(--muted)}
+.cal .ns{background:rgba(30,158,106,.18);color:var(--good)}.cal .sp{background:rgba(59,163,208,.16);color:#2F86AE}.cal .td{outline:2px solid var(--sun)}.cal .fu{opacity:.45}.cal .hd{background:none;height:18px;font-size:11px}
+
 </style>
 </head>
 <body>
@@ -107,6 +110,7 @@ svg text{fill:var(--muted);font-size:11px}
     <div class="big" id="safe">0</div>
     <div class="sub" id="perDay"></div>
     <div id="status"></div>
+    <div class="small muted" id="today" style="margin-top:10px"></div>
   </div>
   <div class="grid g4 g2m" style="margin-top:14px">
     <div class="card stat"><div class="k">Money in</div><div class="v" id="sIn">0</div></div>
@@ -117,6 +121,10 @@ svg text{fill:var(--muted);font-size:11px}
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><h3>Bills due soon</h3><div id="soon"></div></div>
     <div class="card"><h3>Spending by category</h3><div id="catDonut"></div><div id="catBars"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>No-spend days</h3><div id="nsStats" class="small muted" style="margin-bottom:8px"></div><div id="nsCal"></div></div>
+    <div class="card"><h3>Impulse pause</h3><div id="pauseSum"></div></div>
   </div>
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><h3>Last 6 months</h3><div id="trend"></div></div>
@@ -156,6 +164,20 @@ svg text{fill:var(--muted);font-size:11px}
   <div class="grid g2" id="goalList"></div>
 </section>
 
+<!-- PAUSE -->
+<section class="view" id="v-pause">
+  <div class="sec-h"><h2>Impulse pause</h2><span class="muted small" id="pauseKept"></span></div>
+  <div class="card">
+    <p class="small muted" style="margin-top:0">Want something? Park it here instead of buying it now. After the waiting time you decide calmly: let it go, buy it, or save up for it.</p>
+    <form class="add" id="pauseForm" autocomplete="off">
+      <label class="f">What is it?<input id="pName" maxlength="40" placeholder="e.g. New headphones" required></label>
+      <label class="f">Price<input id="pPrice" inputmode="decimal" placeholder="0.00" required></label>
+      <button class="btn full" type="submit">Pause it</button>
+    </form>
+  </div>
+  <div class="card" style="margin-top:14px"><div id="pauseList"></div></div>
+</section>
+
 <!-- SETTINGS -->
 <section class="view" id="v-set">
   <div class="sec-h"><h2>Settings</h2></div>
@@ -166,6 +188,8 @@ svg text{fill:var(--muted);font-size:11px}
         <label class="f">Your name<input id="setName" maxlength="30"></label>
         <label class="f">Currency symbol<input id="setCur" maxlength="4"></label>
         <label class="f">Safety buffer (kept back each month)<input id="setBuf" inputmode="decimal"></label>
+        <label class="f">Impulse pause waiting time (hours)<input id="setPause" inputmode="numeric"></label>
+        <label class="f">No-spend days goal this month<input id="setNs" inputmode="numeric"></label>
         <label class="f">Theme<select id="setTheme"><option value="light">Light</option><option value="dark">Dark</option><option value="auto">Match my device</option></select></label>
       </div>
     </div>
@@ -199,6 +223,7 @@ svg text{fill:var(--muted);font-size:11px}
   <button data-v="spend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Spending</button>
   <button data-v="bills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>Bills</button>
   <button data-v="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Goals</button>
+  <button data-v="pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>Pause</button>
   <button data-v="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z"/></svg>Settings</button>
 </nav>
 
@@ -223,7 +248,7 @@ var MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","D
 var daysIn = function(ym){var p=ym.split("-");return new Date(+p[0],+p[1],0).getDate();};
 var addM = function(ym,k){var p=ym.split("-");var d=new Date(+p[0],+p[1]-1+k,1);return ymOf(d);};
 
-function blank(){return {v:1,settings:{name:"",cur:"$",buffer:0,theme:"light"},income:[],cats:[
+function blank(){return {v:1,pause:[],settings:{name:"",cur:"$",buffer:0,theme:"light",pauseHours:48,nsGoal:8},income:[],cats:[
   {name:"Groceries",limit:0},{name:"Eating out",limit:0},{name:"Transport",limit:0},{name:"Shopping",limit:0},{name:"Fun",limit:0},{name:"Health",limit:0},{name:"Kids",limit:0},{name:"Other",limit:0}],
   bills:[],tx:[],goals:[]};}
 
@@ -246,6 +271,9 @@ function sample(){
   items.forEach(function(it){it[1].forEach(function(a,i){var day=Math.max(1,Math.round((i+1)*td/(it[1].length+1)));if(day<=td&&i<4){var nn=(notes[it[0]]||[""])[i%((notes[it[0]]||[""]).length)];d.tx.push({id:uid(),date:ym+"-"+pad(day),amount:a,cat:it[0],note:nn,type:"out"});}});});
   d.tx.push({id:uid(),date:ym+"-"+pad(Math.max(1,td-2)),amount:40,cat:"Other",note:"Sold old bike lights",type:"in"});
   d.bills.forEach(function(b){if(b.day<td)b.paid[ym]=true;});
+  d.settings.pauseHours=48; d.settings.nsGoal=8;
+  var hrs=function(h){return new Date(Date.now()-h*3600000).toISOString();};
+  d.pause=[{id:uid(),name:"Wireless headphones",price:89,added:hrs(60),status:"waiting"},{id:uid(),name:"Second pair of trainers",price:65,added:hrs(20),status:"waiting"},{id:uid(),name:"Smart watch",price:199,added:hrs(240),status:"let",decided:hrs(190)},{id:uid(),name:"Designer candle",price:42,added:hrs(170),status:"let",decided:hrs(120)},{id:uid(),name:"Board game",price:35,added:hrs(300),status:"bought",decided:hrs(250)}];
   return d;
 }
 
@@ -254,7 +282,7 @@ function load(){
   if(DEMO){S=sample();return;}
   try{var raw=localStorage.getItem(KEY);S=raw?JSON.parse(raw):null;}catch(e){S=null;}
   if(!S||typeof S!=="object"){S=sample();S.firstRun=true;save();}
-  S.settings=S.settings||{};["income","cats","bills","tx","goals"].forEach(function(k){if(!Array.isArray(S[k]))S[k]=[];});
+  S.settings=S.settings||{};["income","cats","bills","tx","goals","pause"].forEach(function(k){if(!Array.isArray(S[k]))S[k]=[];});
 }
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast("Could not save on this device");}}
 
@@ -300,6 +328,9 @@ function renderHeader(){var p=curYM.split("-");$("mLabel").textContent=MONTHS[+p
 
 function renderHome(){
   var c=calc(curYM);
+  var tdISO=todayISO(),spT=S.tx.filter(function(t){return t.type!=="in"&&t.date===tdISO;}).reduce(function(a,t){return a+num(t.amount);},0);
+  $("today").innerHTML=curYM===ymOf(new Date())?("Spent today: <b>"+fmt(spT)+"</b>"+(spT===0?" · a no-spend day so far 🌱":"")):"";
+  renderNs();renderPauseSum();
   $("safe").textContent=fmt0(c.safe);
   $("safe").style.color=c.safe<0?"var(--bad)":"";
   if(c.dLeft>0){$("perDay").textContent=fmt(Math.max(c.perDay,0))+" a day for the "+c.dLeft+" day"+(c.dLeft===1?"":"s")+" left";}
@@ -385,13 +416,52 @@ function renderGoals(){
 }
 
 function renderSettings(){
-  $("setName").value=S.settings.name||"";$("setCur").value=S.settings.cur||"$";$("setBuf").value=num(S.settings.buffer)||"";$("setTheme").value=S.settings.theme||"light";
+  $("setName").value=S.settings.name||"";$("setCur").value=S.settings.cur||"$";$("setBuf").value=num(S.settings.buffer)||"";$("setTheme").value=S.settings.theme||"light";$("setPause").value=pauseHrs();$("setNs").value=num(S.settings.nsGoal)||"";
   $("incList").innerHTML=S.income.length?S.income.map(function(i){return '<div class="row"><div class="grow"><div class="t">'+esc(i.name)+'</div></div><span class="amt">'+fmt(num(i.amount))+'</span><button class="x" data-edit-inc="'+i.id+'" aria-label="Edit">✎</button></div>';}).join(""):'<div class="empty">Add your take-home pay to get started.</div>';
   $("catList").innerHTML=S.cats.map(function(c,ix){return '<div class="row"><i class="dot" style="background:'+catColor(c.name)+'"></i><div class="grow"><div class="t">'+esc(c.name)+'</div></div><span class="small muted">'+(num(c.limit)>0?"limit "+fmt0(num(c.limit)):"no limit")+'</span><button class="x" data-edit-cat="'+ix+'" aria-label="Edit">✎</button></div>';}).join("");
 }
 
 function applyTheme(){var t=S.settings.theme||"light";if(t==="auto")t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";document.documentElement.setAttribute("data-theme",t);}
-function renderAll(){applyTheme();renderHeader();renderHome();renderSpend();renderBills();renderGoals();renderSettings();}
+function renderAll(){applyTheme();renderHeader();renderHome();renderSpend();renderBills();renderGoals();renderPause();renderSettings();}
+
+
+/* ---------- no-spend days + impulse pause ---------- */
+function spendDays(ym){var m={};S.tx.forEach(function(t){if(t.type!=="in"&&t.date&&t.date.slice(0,7)===ym){m[+t.date.slice(8,10)]=(m[+t.date.slice(8,10)]||0)+num(t.amount);}});return m;}
+function nsInfo(ym){
+  var sp=spendDays(ym),dim=daysIn(ym),nowYM=ymOf(new Date()),last=ym<nowYM?dim:(ym===nowYM?new Date().getDate():0),ns=0,streak=0;
+  for(var d=1;d<=last;d++){if(!sp[d])ns++;}
+  if(ym===nowYM){var d0=last;if(sp[d0]){streak=0;}else{while(d0>=1&&!sp[d0]){streak++;d0--;}
+    if(d0<1){var pm=addM(ym,-1),psp=spendDays(pm),pd=daysIn(pm);while(pd>=1&&!psp[pd]){streak++;pd--;}}}}
+  return {sp:sp,dim:dim,last:last,ns:ns,streak:streak};
+}
+function renderNs(){
+  var n=nsInfo(curYM),goal=Math.round(num(S.settings.nsGoal))||0,p=curYM.split("-"),first=new Date(+p[0],+p[1]-1,1).getDay();first=(first+6)%7;
+  $("nsStats").innerHTML='<b style="color:var(--good)">'+n.ns+'</b> no-spend day'+(n.ns===1?"":"s")+(goal?' of your goal of '+goal:'')+(ymOf(new Date())===curYM?' · current streak <b>'+n.streak+'</b> day'+(n.streak===1?"":"s"):'');
+  var h='<div class="cal">'+["M","T","W","T","F","S","S"].map(function(x){return '<div class="hd">'+x+'</div>';}).join("");
+  for(var i=0;i<first;i++)h+='<div style="background:none"></div>';
+  var td=ymOf(new Date())===curYM?new Date().getDate():-1;
+  for(var d=1;d<=n.dim;d++){var c=d>n.last?"fu":(n.sp[d]?"sp":"ns");h+='<div class="'+c+(d===td?" td":"")+'" title="'+(n.sp[d]?fmt(n.sp[d])+" spent":"")+'">'+d+'</div>';}
+  $("nsCal").innerHTML=h+'</div><div class="legend"><span><i class="dot" style="background:var(--good)"></i>No-spend day</span><span><i class="dot" style="background:#3BA3D0"></i>Spent</span><span><i class="dot" style="background:var(--sun)"></i>Today</span></div>';
+}
+function pauseHrs(){var h=Math.round(num(S.settings.pauseHours));return h>0?h:48;}
+function pauseState(it){if(it.status!=="waiting")return {k:"done"};var left=new Date(it.added).getTime()+pauseHrs()*3600000-Date.now();return left<=0?{k:"ready"}:{k:"wait",h:Math.ceil(left/3600000)};}
+function kept(){return r2(S.pause.filter(function(x){return x.status==="let";}).reduce(function(a,x){return a+num(x.price);},0));}
+function renderPauseSum(){
+  var w=S.pause.filter(function(x){return x.status==="waiting";}),ready=w.filter(function(x){return pauseState(x).k==="ready";}).length;
+  $("pauseSum").innerHTML='<div class="row"><div class="grow">Money kept by letting things go</div><span class="amt in">'+fmt(kept())+'</span></div><div class="row"><div class="grow">Waiting</div><span class="amt">'+w.length+'</span></div><div class="row"><div class="grow">Ready to decide</div><span class="amt" style="color:'+(ready?"#B07A06":"")+'">'+ready+'</span></div><button class="btn ghost sm" style="margin-top:8px" data-goto="pause">Open the pause list</button>';
+}
+var LABEL={let:"Let it go",bought:"Bought it",saving:"Saving up"};
+function renderPause(){
+  $("pauseKept").textContent=fmt(kept())+" kept";
+  var list=S.pause.slice().sort(function(a,b){var o={waiting:0,saving:1,bought:2,let:3};return (o[a.status]-o[b.status])||(a.added<b.added?1:-1);});
+  if(!list.length){$("pauseList").innerHTML='<div class="empty">Nothing paused. Next time something tempts you, park it here first.</div>';return;}
+  $("pauseList").innerHTML=list.map(function(it){var st=pauseState(it),right;
+    if(st.k==="wait")right='<span class="tag due">'+st.h+'h to go</span>';
+    else if(st.k==="ready")right='<span class="tag paid">Ready to decide</span>';
+    else right='<span class="tag">'+LABEL[it.status]+'</span>';
+    var acts=it.status==="waiting"?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" data-pz="let" data-id="'+it.id+'">Let it go</button><button class="btn ghost sm" data-pz="bought" data-id="'+it.id+'">Bought it</button><button class="btn ghost sm" data-pz="saving" data-id="'+it.id+'">Save up for it</button></div>':'';
+    return '<div class="row" style="flex-wrap:wrap"><div class="grow"><div class="t">'+esc(it.name)+'</div><div class="s">Paused '+new Date(it.added).toLocaleDateString(undefined,{day:"numeric",month:"short"})+'</div></div>'+right+'<span class="amt">'+fmt(num(it.price))+'</span><button class="x" data-pdel="'+it.id+'" aria-label="Delete">×</button>'+(acts?'<div style="flex-basis:100%">'+acts+'</div>':'')+'</div>';}).join("")+'<p class="small muted">Questions to ask: Will I still want this in a week? Do I already own something that does the job? Where would this money go instead?</p>';
+}
 
 /* ---------- interactions ---------- */
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove("on");},1800);}
@@ -433,6 +503,18 @@ $("setName").onchange=function(){S.settings.name=this.value.trim();save();render
 $("setCur").onchange=function(){S.settings.cur=this.value.trim()||"$";save();renderAll();};
 $("setBuf").onchange=function(){S.settings.buffer=r2(num(this.value));save();renderAll();};
 $("setTheme").onchange=function(){S.settings.theme=this.value;save();renderAll();};
+$("setPause").onchange=function(){S.settings.pauseHours=Math.max(1,Math.round(num(this.value))||48);save();renderAll();};
+$("setNs").onchange=function(){S.settings.nsGoal=Math.max(0,Math.round(num(this.value)));save();renderAll();};
+$("pauseForm").addEventListener("submit",function(e){e.preventDefault();var n=$("pName").value.trim(),pr=r2(num($("pPrice").value));if(!n||pr<=0){toast("Add a name and a price");return;}S.pause.push({id:uid(),name:n,price:pr,added:new Date().toISOString(),status:"waiting"});save();$("pName").value="";$("pPrice").value="";renderAll();toast("Paused for "+pauseHrs()+" hours");});
+document.addEventListener("click",function(e){
+  var g=e.target.closest("[data-goto]");if(g){show(g.dataset.goto);return;}
+  var b=e.target.closest("[data-pz]");if(b){var it=S.pause.find(function(x){return x.id===b.dataset.id;});if(!it)return;it.status=b.dataset.pz;it.decided=new Date().toISOString();
+    if(it.status==="bought"){S.tx.push({id:uid(),date:todayISO(),amount:num(it.price),cat:"Shopping",note:it.name,type:"out"});toast("Logged as a spend");}
+    else if(it.status==="saving"){S.goals.push({id:uid(),name:it.name,target:num(it.price),saved:0,monthly:r2(Math.max(5,num(it.price)/4))});toast("Added to your goals");}
+    else toast("Nice. "+fmt(num(it.price))+" kept");
+    save();renderAll();return;}
+  var dl=e.target.closest("[data-pdel]");if(dl){S.pause=S.pause.filter(function(x){return x.id!==dl.dataset.pdel;});save();renderAll();}
+});
 $("exportBtn").onclick=function(){var blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sumwise-budget-backup-"+todayISO()+".json";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);toast(DEMO?"Backup downloaded (demo data)":"Backup downloaded");};
 $("importFile").onchange=function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||!Array.isArray(d.tx))throw 0;S=d;save();renderAll();toast("Backup restored");}catch(e){toast("That file isn't a SumWise backup");}};rd.readAsText(f);this.value="";};
 $("sampleBtn").onclick=function(){if(confirm("Replace everything with sample data?")){var th=S.settings.theme;S=sample();S.settings.theme=th;save();curYM=ymOf(new Date());renderAll();toast("Sample data loaded");}};
