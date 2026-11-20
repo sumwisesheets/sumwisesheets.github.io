@@ -1,0 +1,16 @@
+{
+ "name": "SumWise Budget Planner",
+ "short_name": "Budget",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#F3F7F6",
+ "theme_color": "#0F5257",
+ "icons": [
+  {
+   "src": "icon.png",
+   "sizes": "600x600",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}
